@@ -1,0 +1,18 @@
+# FastAPI Backend Requirements for SignEX Sign Language Detection
+
+# Core FastAPI
+fastapi==0.104.1
+uvicorn==0.24.0
+
+# Image processing
+Pillow==10.1.0
+opencv-python==4.8.1.78
+
+# Additional utilities
+python-multipart==0.0.6
+pydantic==2.5.0
+
+# Optional: For future ML integration
+# numpy==1.25.2
+# tensorflow==2.15.0
+# mediapipe==0.10.8
