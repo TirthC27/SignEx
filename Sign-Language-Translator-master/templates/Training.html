@@ -1,0 +1,187 @@
+<!-- 
+    For training your own sign language model, with custom dataset. 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Training Studio</title>
+
+    <script src="https://kit.fontawesome.com/a658a7b479.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@tensorflow/tfjs"></script>
+    <script src="https://unpkg.com/@tensorflow-models/mobilenet"></script>
+    <script src="https://unpkg.com/@tensorflow-models/knn-classifier"></script>
+    <script src="https://code.jquery.com/jquery-3.5.0.js" integrity="sha256-r/AaFHrszJtwpe+tHyNi/XCfMxYpbsRg2Uqn0x3s2zc=" crossorigin="anonymous"></script>
+
+    <link rel="icon" type="image/png" href="../docs/logo.png">
+    <link rel="stylesheet" type="text/css" href="../static/mystyle.css">
+    <script src="./js/main.js"></script>
+
+</head>
+
+<body>
+    <div id="loading"></div>
+
+    <!-- Modern Training Studio Interface -->
+    <div class="training-studio">
+        <!-- Header Section -->
+        <div class="studio-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>SignEX Training</h1>
+                        <p>Professional AI Training Studio</p>
+                    </div>
+                </div>
+                <div class="status-section">
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Ready to train</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div class="dashboard">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-content">
+                    <div class="welcome-section">
+                        <h2>Welcome to SignEX</h2>
+                        <p>Professional sign language training made simple</p>
+                    </div>
+                    
+                    <div class="time-card">
+                        <div class="time-display" id="current-time">08:59 AM</div>
+                        <div class="date-display" id="current-date">Saturday, September 27, 2025</div>
+                    </div>
+
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-classes">0</div>
+                            <div class="stat-label">Training Classes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-images">0</div>
+                            <div class="stat-label">Images Captured</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="main-content">
+                <!-- Camera Section -->
+                <div class="camera-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-video"></i> Live Camera Feed</h3>
+                        <div class="camera-status">
+                            <span class="status-dot active"></span>
+                            <span>Live</span>
+                        </div>
+                    </div>
+                    
+                    <div class="camera-container">
+                        <video autoplay playsinline muted id="webcam" class="webcam-feed"></video>
+                        <div class="camera-overlay">
+                            <div class="prediction-info">
+                                <div class="prediction-row">
+                                    <span class="prediction-label">Prediction:</span>
+                                    <span class="prediction-value" id="predictions">None</span>
+                                </div>
+                                <div class="prediction-row">
+                                    <span class="prediction-label">Confidence:</span>
+                                    <span class="prediction-value" id="confidence">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="camera-controls">
+                        <button id='btnSpeak' class="control-btn speak-btn">
+                            <i class="fas fa-microphone"></i>
+                            <span>Speak</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Training Controls -->
+                <div class="controls-panel">
+                    <!-- Model Management -->
+                    <div class="control-section">
+                        <div class="section-header">
+                            <h4><i class="fas fa-cogs"></i> Model Management</h4>
+                        </div>
+                        <div class="section-content">
+                            <button class="action-btn primary" id="save_button">
+                                <i class="fas fa-download"></i>
+                                <span>Download Model</span>
+                            </button>
+                            <div class="file-upload">
+                                <input id="load_button" class="file-input" type="file" accept=".json">
+                                <label for="load_button" class="upload-btn">
+                                    <i class="fas fa-upload"></i>
+                                    <span>Load Model</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Class Management -->
+                    <div class="control-section">
+                        <div class="section-header">
+                            <h4><i class="fas fa-plus-circle"></i> Add New Class</h4>
+                        </div>
+                        <div class="section-content">
+                            <div class="input-group">
+                                <input id="inputClassName" type="text" placeholder="Enter class name (e.g., 'Hello', 'Thank you')" class="class-input">
+                                <button class="action-btn success" id="add-button">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Add Class</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Training Classes -->
+                    <div class="control-section">
+                        <div class="section-header">
+                            <h4><i class="fas fa-list"></i> Training Classes</h4>
+                        </div>
+                        <div class="section-content">
+                            <div id="training-cards" class="classes-grid">
+                                <!-- Training class cards will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update time and date
+        function updateDateTime() {
+            const now = new Date();
+            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', timeOptions);
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', dateOptions);
+        }
+
+        // Update every minute
+        setInterval(updateDateTime, 60000);
+        updateDateTime();
+    </script>
+
+</body>
+
+</html>
